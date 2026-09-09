@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Lotería de la Fe</title>
+
+
+<style>
+
+    * {
+        box-sizing: border-box;
+    }
+
+
+    html,
+    body {
+        margin: 0;
+        width: 99.3%;
+        height: 95%;
+
+        font-family: Arial, sans-serif;
+
+	background:
+        linear-gradient(
+            rgba(220, 238, 240, 0.60),
+            rgba(220, 238, 240, 0.60)
+        ),
+        url("Background.png") center / cover no-repeat fixed;
+
+	background-repeat:
+	    repeat,
+	    repeat;
+	
+	background-size:
+	    auto,
+	    250px auto;
+	
+	background-position:
+	    0 0,
+	    center top;
+    }
+
+
+    /* ========================================
+       MAIN APP
+       ======================================== */
+
+    .app {
+        width: 95%;
+        height: 100dvh;
+
+        margin: 0 auto;
+        padding: 1vh 0;
+
+        display: grid;
+
+        grid-template-columns:
+            minmax(0, 45fr)
+            minmax(0, 55fr);
+
+        gap: clamp(8px, 1.2vw, 20px);
+    }
+
+
+    /* ========================================
+       CURRENT CARD
+       ======================================== */
+
+    .current-section {
+        min-width: 0;
+        min-height: 0;
+
+        display: flex;
+
+        align-items: center;
+        justify-content: center;
+
+        text-align: center;
+    }
+
+
+    #imagenCarta {
+        display: block;
+
+        width: auto;
+        max-width: 96%;
+        max-height: 96%;
+        width: auto;
+        height: auto;
+
+        object-fit: contain;
+
+        border-radius: 12px;
+    }
+
+
+    #nombreCarta {
+        display: none;
+    }
+
+
+    /* ========================================
+       CARD SWAP ANIMATION
+       ======================================== */
+
+    #imagenCarta.swap {
+        animation: cardSwap 0.6s ease-in-out;
+    }
+
+
+    @keyframes cardSwap {
+
+        0% {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        50% {
+            opacity: 0;
+            transform: scale(0.96);
+        }
+
+        100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+    }
+
+
+
+    /* ========================================
+       RIGHT SIDE
+       ======================================== */
+
+    .game-section {
+        min-width: 0;
+        min-height: 0;
+
+	padding: clamp(10px, 3vh, 40px) 0;
+
+        display: grid;
+
+        grid-template-rows:
+            auto
+            1fr
+            auto
+            auto;
+
+        gap: 10px;
+    }
+
+
+    /* ========================================
+       TOP BUTTONS
+       ======================================== */
+
+    .top-buttons {
+        display: grid;
+
+        grid-template-columns:
+            1fr
+            1fr
+            1fr;
+
+        gap: clamp(5px, 0.7vw, 10px);
+    }
+
+
+    .top-buttons button {
+        width: 100%;
+
+        padding: clamp(5px, 0.7vh, 10px) clamp(8px, 0.9vw, 14px);
+
+        border: none;
+        border-radius: 12px;
+
+        background: #183642;
+        color: white;
+
+        font-size: clamp(15px, 1.6vw, 21px);
+        font-weight: bold;
+
+        cursor: pointer;
+    }
+
+
+    /* ========================================
+       HISTORY GRID
+       ======================================== */
+
+    .historial {
+        min-height: 0;
+
+        display: grid;
+
+        grid-template-columns:
+            repeat(9, minmax(0, 1fr));
+
+        grid-auto-rows: 1fr;
+
+        gap: clamp(3px, 0.35vw, 7px);
+    }
+
+
+    .mini-card {
+        min-width: 0;
+        min-height: 0;
+
+        display: flex;
+
+        align-items: center;
+        justify-content: center;
+
+        text-align: center;
+
+        border-radius: 8px;
+
+        font-size: clamp(11px, 1.3vw, 18px);
+        font-weight: bold;
+
+        padding: 2px;
+    }
+
+
+    .no-llamada {
+        background: #c6c6c6;
+        color: #333;
+    }
+
+
+    .llamada {
+        background: #70d65c;
+        color: #123b18;
+    }
+
+
+    .actual {
+        background: #35cbd0;
+        color: #063b3d;
+    }
+
+
+    /* ========================================
+       COUNTER
+       ======================================== */
+
+	#contador {
+	    margin: 0 auto;
+	
+	    padding: 4px 18px;
+	
+	    text-align: center;
+	
+	    font-size: clamp(17px, 2vw, 28px);
+	    font-weight: bold;
+	
+	    background: rgba(255, 255, 255, 0.75);
+	
+	    border-radius: 12px;
+	
+	    width: fit-content;
+	}
+
+
+    /* ========================================
+       BOTTOM AREA
+       ======================================== */
+
+    .bottom-section {
+        min-height: 0;
+
+        display: grid;
+
+        grid-template-columns:
+            minmax(0, 1fr)
+            auto;
+
+        gap: 12px;
+    }
+
+
+    /* ========================================
+       CANTADA
+       ======================================== */
+
+    .cantada {
+        min-width: 0;
+
+        min-height: clamp(90px, 12vh, 140px);
+        height: clamp(90px, 12vh, 140px);
+
+        background: #ffffff;
+
+        border-radius: clamp(12px, 1.2vw, 20px);
+
+        padding: clamp(8px, 1vw, 16px);
+
+        display: flex;
+
+        flex-direction: column;
+
+        align-items: center;
+        justify-content: center;
+
+        text-align: center;
+    }
+
+
+    .cantada-label {
+        font-size: clamp(13px, 1.5vw, 21px);
+
+        font-weight: bold;
+        font-style: italic;
+
+        margin-bottom: clamp(3px, 0.5vh, 8px);
+    }
+
+
+    #textoCantada {
+        max-width: 100%;
+
+        font-size: clamp(16px, 1.65vw, 28px);
+
+        font-weight: bold;
+
+        line-height: 1.15;
+
+        max-height: 4.6em;
+        overflow: hidden;
+
+        white-space: normal;
+
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+    }
+
+
+    /* ========================================
+       DRAW BUTTON
+       ======================================== */
+
+    #boton {
+        min-width: clamp(90px, 10vw, 165px);
+
+        height: 100%;
+
+        padding: clamp(8px, 1vw, 15px);
+
+        border: none;
+        border-radius: 14px;
+
+        background: #183642;
+        color: white;
+
+        font-size: clamp(15px, 1.7vw, 23px);
+
+        font-weight: bold;
+
+        cursor: pointer;
+    }
+
+
+    #boton:active,
+    .top-buttons button:active,
+    .loteria-buttons button:active {
+        transform: scale(0.98);
+    }
+
+
+    /* ========================================
+       LOTERÍA OVERLAY
+       ======================================== */
+
+    .loteria-overlay {
+        display: none;
+
+        position: fixed;
+
+        inset: 0;
+
+        background: rgba(0, 0, 0, 0.65);
+
+        align-items: center;
+        justify-content: center;
+
+        z-index: 1000;
+
+        padding: 20px;
+    }
+
+
+    .loteria-box {
+        background: white;
+
+        padding: 30px;
+
+        border-radius: 18px;
+
+        width: min(90%, 800px);
+
+        text-align: center;
+    }
+
+
+    .loteria-box h2 {
+        margin-top: 0;
+
+        font-size: clamp(28px, 5vw, 42px);
+    }
+
+
+    .loteria-box p {
+        font-size: clamp(18px, 3vw, 25px);
+
+        margin-bottom: 25px;
+    }
+
+
+    .loteria-buttons {
+        display: grid;
+
+        grid-template-columns:
+            1fr
+            1fr;
+
+        gap: 12px;
+    }
+
+
+    .loteria-buttons button {
+        padding: 14px 10px;
+
+        font-size: clamp(14px, 2vw, 20px);
+
+        font-weight: bold;
+
+        border: none;
+
+        border-radius: 10px;
+
+        cursor: pointer;
+    }
+
+
+    /* Victory animation */
+
+    .victoria {
+        display: none;
+
+        text-align: center;
+    }
+
+
+    .victoria img {
+        display: block;
+
+        width: 100%;
+        max-width: 700px;
+
+        height: auto;
+
+        margin: 0 auto;
+    }
+
+
+
+    /* ========================================
+       ARTWORK GALLERY
+       ======================================== */
+
+    .galeria-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(220, 238, 240, 0.97);
+        z-index: 2000;
+        overflow: auto;
+        padding: 20px;
+    }
+
+    .galeria-view {
+        width: min(1500px, 100%);
+        min-height: 100%;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .galeria-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .galeria-header h2 {
+        margin: 0;
+        color: #183642;
+        font-size: clamp(24px, 3vw, 38px);
+    }
+
+    .galeria-header button,
+    .galeria-cerrar {
+        border: none;
+        border-radius: 12px;
+        background: #183642;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        padding: 10px 16px;
+        font-size: clamp(14px, 1.5vw, 20px);
+    }
+
+    .galeria-grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 12px;
+        padding-bottom: 10px;
+    }
+
+    .galeria-card {
+        min-width: 0;
+        border: none;
+        border-radius: 12px;
+        background: white;
+        padding: 8px;
+        cursor: pointer;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(24, 54, 66, 0.12);
+        transition: transform 0.15s ease;
+    }
+
+    .galeria-card:active {
+        transform: scale(0.98);
+    }
+
+    .galeria-card img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 7 / 10;
+        object-fit: contain;
+        border-radius: 8px;
+        background: #f2f2f2;
+    }
+
+    .galeria-numero {
+        display: block;
+        margin-top: 6px;
+        color: #183642;
+        font-size: clamp(11px, 1vw, 15px);
+        font-weight: bold;
+    }
+
+    .galeria-preview {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 2100;
+        background: rgba(0, 0, 0, 0.72);
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .galeria-preview-box {
+        width: min(900px, 94vw);
+        max-height: 94vh;
+        overflow: auto;
+        background: white;
+        border-radius: 18px;
+        padding: 18px;
+        text-align: center;
+    }
+
+    .galeria-preview-cantada {
+        margin: 0 auto 14px;
+        padding: 10px 18px;
+        max-width: 760px;
+        color: #183642;
+        font-size: clamp(17px, 2vw, 25px);
+        font-weight: bold;
+        line-height: 1.2;
+    }
+
+    .galeria-preview-box img {
+        display: block;
+        width: auto;
+        max-width: 100%;
+        max-height: 58vh;
+        margin: 0 auto;
+        object-fit: contain;
+        border-radius: 10px;
+    }
+
+    .galeria-preview-numero {
+        margin-top: 10px;
+        color: #183642;
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+
+
+    .galeria-preview-actions {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+    }
+
+    .galeria-preview-actions button {
+        border: none;
+        border-radius: 10px;
+        background: #183642;
+        color: white;
+        padding: 10px 14px;
+        min-width: 90px;
+        font-size: 15px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    @media (max-width: 900px) {
+        .galeria-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 600px) {
+        .galeria-overlay {
+            padding: 10px;
+        }
+
+        .galeria-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 7px;
+        }
+
+        .galeria-card {
+            padding: 5px;
+            border-radius: 8px;
+        }
+
+        .galeria-header {
+            align-items: flex-start;
+        }
+
+        .galeria-header h2 {
+            font-size: 22px;
+        }
+    }
+
+    /* ========================================
+       SMALL LANDSCAPE PHONES
+       ======================================== */
+
+    @media (max-height: 600px) and (orientation: landscape) {
+
+        .app {
+            width: 97%;
+
+            padding: 5px 0;
+
+            gap: 10px;
+        }
+
+
+        #imagenCarta {
+            max-height: 91dvh;
+        }
+
+
+        .game-section {
+            gap: 5px;
+        }
+
+
+        .historial {
+            gap: 3px;
+        }
+
+
+        .mini-card {
+            border-radius: 5px;
+        }
+
+
+        .top-buttons {
+            gap: 6px;
+        }
+
+
+        .top-buttons button {
+            padding: 5px;
+        }
+
+
+        #boton {
+            min-width: 95px;
+
+            padding: 10px;
+        }
+
+
+        .cantada {
+            padding: 7px;
+        }
+
+    }
+
+
+    /* ========================================
+       PORTRAIT
+       ======================================== */
+
+    @media (orientation: portrait) {
+
+        html,
+        body {
+            overflow: hidden;
+        }
+
+
+        .app {
+            width: 96%;
+            height: 100dvh;
+
+            padding: 8px 0;
+
+            display: grid;
+
+            grid-template-columns: 1fr;
+
+            grid-template-rows:
+                43dvh
+                1fr;
+
+            gap: 7px;
+        }
+
+
+        .current-section {
+            min-height: 0;
+        }
+
+
+        #imagenCarta {
+            max-width: 100%;
+            max-height: 43dvh;
+
+            width: auto;
+            height: auto;
+        }
+
+
+        .game-section {
+            min-height: 0;
+
+            grid-template-rows:
+                auto
+                1fr
+                auto
+                auto;
+
+            gap: 5px;
+        }
+
+
+        .top-buttons {
+            gap: 5px;
+        }
+
+
+        .top-buttons button {
+            padding: 6px;
+
+            font-size: 16px;
+        }
+
+
+        .historial {
+            grid-template-columns:
+                repeat(9, minmax(0, 1fr));
+
+            gap: 3px;
+        }
+
+
+        .mini-card {
+            border-radius: 5px;
+
+            font-size: clamp(9px, 2.8vw, 14px);
+
+            padding: 1px;
+        }
+
+
+        #contador {
+            font-size: 17px;
+        }
+
+
+        .bottom-section {
+            grid-template-columns:
+                minmax(0, 1fr)
+                auto;
+
+            gap: 6px;
+        }
+
+
+        .cantada {
+            height: 120px;
+
+            border-radius: 14px;
+
+            padding: 8px;
+        }
+
+
+        .cantada-label {
+            font-size: 12px;
+
+            margin-bottom: 4px;
+        }
+
+
+        #textoCantada {
+            font-size: 20px;
+        }
+
+
+        #boton {
+            min-width: 90px;
+
+            padding: 10px;
+
+            font-size: 14px;
+
+            border-radius: 10px;
+        }
+
+
+        .loteria-box {
+            padding: 24px 18px;
+        }
+
+    }
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="app">
+
+
+    <!-- CURRENT CARD -->
+
+    <section class="current-section">
+
+        <img
+            id="imagenCarta"
+            src="ccards/Back.png"
+            alt="Lotería de la Fe"
+        >
+
+        <h1 id="nombreCarta">
+            ¡Listos para comenzar!
+        </h1>
+
+    </section>
+
+
+
+    <!-- GAME AREA -->
+
+    <section class="game-section">
+
+
+        <!-- TOP BUTTONS -->
+
+        <div class="top-buttons">
+
+            <button id="nuevoJuego">
+                NUEVA PARTIDA
+            </button>
+
+            <button id="loteria">
+                ¡LOTERÍA!
+            </button>
+
+            <button id="abrirGaleria">
+                🖼️ GALERÍA
+            </button>
+
+        </div>
+
+
+        <!-- 54 CARD HISTORY -->
+
+        <div
+            id="historial"
+            class="historial"
+        ></div>
+
+
+        <p id="contador">
+            0 de 54 cartas
+        </p>
+
+
+        <!-- CANTADA + BUTTON -->
+
+        <div class="bottom-section">
+
+
+            <div class="cantada">
+
+                <div id="textoCantada">
+                    QUE NO LE DIGAN, QUE NO LE CUENTEN
+                </div>
+
+            </div>
+
+
+            <button id="boton">
+                CANTAR<br>
+                CARTA
+            </button>
+
+
+        </div>
+
+
+    </section>
+
+
+</div>
+
+
+
+<!-- ========================================
+     ARTWORK GALLERY
+     ======================================== -->
+
+<div id="galeriaOverlay" class="galeria-overlay">
+
+    <div class="galeria-view">
+
+        <div class="galeria-header">
+            <h2>🖼️ GALERÍA DE CARTAS</h2>
+
+            <button
+                id="cerrarGaleria"
+                type="button"
+            >
+                ← VOLVER AL JUEGO
+            </button>
+        </div>
+
+        <div
+            id="galeriaGrid"
+            class="galeria-grid"
+        ></div>
+
+    </div>
+
+</div>
+
+
+<div
+    id="galeriaPreview"
+    class="galeria-preview"
+>
+
+    <div class="galeria-preview-box">
+
+        <div
+            id="galeriaPreviewCantada"
+            class="galeria-preview-cantada"
+        ></div>
+
+        <img
+            id="galeriaPreviewImagen"
+            src=""
+            alt=""
+        >
+
+        <div
+            id="galeriaPreviewNumero"
+            class="galeria-preview-numero"
+        ></div>
+
+        <div class="galeria-preview-actions">
+
+            <button
+                id="galeriaAnterior"
+                type="button"
+            >
+                ← ANTERIOR
+            </button>
+
+            <button
+                id="cerrarPreview"
+                type="button"
+            >
+                CERRAR
+            </button>
+
+            <button
+                id="galeriaSiguiente"
+                type="button"
+            >
+                SIGUIENTE →
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================
+     LOTERÍA POPUP
+     ======================================== -->
+
+<div
+    id="loteriaOverlay"
+    class="loteria-overlay"
+>
+
+    <div class="loteria-box">
+
+
+        <div id="loteriaPregunta">
+
+            <h2>🎉 ¡LOTERÍA!</h2>
+
+            <p>
+                ¿Es una lotería válida?
+            </p>
+
+
+            <div class="loteria-buttons">
+
+                <button id="confirmarLoteria">
+                    CONFIRMADO🎉
+                </button>
+
+                <button id="falsaAlarma">
+                    FALSA ALARMA
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="victoria"
+            class="victoria"
+        >
+
+            <img
+                id="gifVictoria"
+                src="gif/winner.gif"
+                alt="¡Victoria!"
+            >
+
+        </div>
+
+
+    </div>
+
+</div>
+
+
+<script>
+
+
+    /* ========================================
+       THE 54 CARDS
+       ======================================== */
+
+
+const mazoOriginal = [
+    { nombre: "El Pastor", archivo: "El Pastor.png", cantada: "Al rebaño va guiando y la Palabra predicando…"},
+    { nombre: "El Maná", archivo: "El Maná.png", cantada: "Del cielo Dios lo envió y al pueblo alimentó..."},
+    { nombre: "El Celular", archivo: "El Celular.png", cantada: "Si entra la llamada a media predicación no es el Señor, ¡pónlo en silencio, por favor! ..."},
+    { nombre: "El Piano", archivo: "El piano.png", cantada: "Con sus teclas de marfil da melodías mil ..."},
+    { nombre: "Daniel", archivo: "Daniel.png", cantada: "Entre leones se acostó, y durmió y despertó porque Dios lo sustentó..."},
+    { nombre: "Los Cacahuates", archivo: "Los Cacahuates.png", cantada: "No es necesario esperar hasta el receso, ¡con un puñadito de eso!..."},
+    { nombre: "La Reportera", archivo: "La Reportera.png", cantada: "No es sólo chisme lo que va a llevar, son las buenas nuevas que presurosa va a publicar..."},
+    { nombre: "El Proyector", archivo: "El Proyector.png", cantada: "¡Cámbienle! Que la letra en la pantalla debe estar..."},
+    { nombre: "El Pozole", archivo: "El Pozole.png", cantada: "Para el festejo en la casa y en el templo, un buen plato, calientito, con limón, tostadas y esmero..."},
+    { nombre: "La Zarza", archivo: "La Zarza.png", cantada: "La que ardía y no se consumía…"},
+    { nombre: "El Desvelado", archivo: "El Desvelado.png", cantada: "No se durmió tarde, es que la vigilia se alargó y con sueño quedó..."},
+    { nombre: "El Cuaderno", archivo: "El Cuaderno.png", cantada: "No importa si es el punto 3 ó el 6, el a) o el b), anota lo que Dios te dé..."},
+    { nombre: "El Bajo", archivo: "El Bajo.png", cantada: "Aunque luego no lo oigan cuando falta todos lo extrañan..."},
+    { nombre: "El Evangelista", archivo: "El Evangelista.png", cantada: "El que lleva el mensaje de salvación a cada rincón de cada nación..."},
+    { nombre: "El Atril", archivo: "El Atril.png", cantada: "Cargado de todo, menos de un himnario..."},
+    { nombre: "El Aseo", archivo: "El Aseo.png", cantada: "Porque con escoba y trapeador también se sirve al Señor..."},
+    { nombre: "La Corona", archivo: "La Corona.png", cantada: "La del Rey de reyes, la del galardón que nos dio la salvación..."},
+    { nombre: "La Oración", archivo: "La Oración.png", cantada: "No sólo los martes, diario habla a Dios con fe y devoción..."},
+    { nombre: "El Redimido", archivo: "El Redimido.png", cantada: "Su vida se ha transformado porque del pecado fue salvado..."},
+    { nombre: "El Juicio", archivo: "El Juicio.png", cantada: "Ya Juan lo profetizó y el niño lo oró: ¡ese día llegará!..."},
+    { nombre: "El Micrófono", archivo: "El Micrófono.png", cantada: "Uno para el pastor, uno para los músicos… y uno que nunca sabemos dónde está..."},
+    { nombre: "Génesis", archivo: "Génesis.png", cantada: "En el principio creó Dios los cielos y la tierra…"},
+    { nombre: "El Abanico", archivo: "El Abanico.png", cantada: "No es para el calor, es para para que fluya el aire de Espíritu..."},
+    { nombre: "La Guitarra", archivo: "La Guitarra.png", cantada: "Con seis cuerdas todas las alabanzas se pueden entonar..."},
+    { nombre: "El Mar Rojo", archivo: "El Mar Rojo.png", cantada: "Para Moisés y el pueblo Dios lo abrió, pero faraón no recibió invitación..."},
+    { nombre: "El Director", archivo: "El Director.png", cantada: "Cuántas veces la estrofa se ha de tocar él señalará, aunque al final el grupo lo que quiera tocará..."},
+    { nombre: "La Botella", archivo: "La Botella.png", cantada: "Con Coca, agua o Electrolit para aguantar después de tanto cantar..."},
+    { nombre: "La Tumba", archivo: "La Tumba.png", cantada: "La que vacía quedó porque Cristo ¡resucitó!..."},
+    { nombre: "El Himnario", archivo: "El Himnario.png", cantada: "Con cantos de antaño o con las 3 versiones del último inspirado..."},
+    { nombre: "El Diezmo", archivo: "El Diezmo.png", cantada: "Con corazón alegre se da al Señor de lo que Él ya nos dio..."},
+    { nombre: "Las Percusiones", archivo: "Las Percusiones.png", cantada: "Que suene el cajón, que suenen los bongos, porque dan el ritmo y la alegría a la santa melodía…"},
+    { nombre: "El Arca", archivo: "El Arca.png", cantada: "De dos en dos y con Noé y su familia que los albergó por más de cuarenta días..."},
+    { nombre: "El Niño", archivo: "El Niño.png", cantada: "Aún con papitas y juguito, Jesús dijo que de él es el Reino de los cielos..."},
+    { nombre: "El Saxofón", archivo: "El Saxofón.png", cantada: "Ya sea con sonido suave o vibrante está en la adoración constante..."},
+    { nombre: "El Púlpito", archivo: "El Púlpito.png", cantada: "Con veinte plumas, dos Biblias, los kleenex, el aceite y la Coca del pastor, de ahí sale cada predicación..."},
+    { nombre: "Salmos", archivo: "Salmos.png", cantada: "Pasas de la queja a la adoración, del arrepentimiento a la intercesión; en sólo tres versos te cambia el corazón..."},
+    { nombre: "La Silla", archivo: "La Silla.png", cantada: "No te la robes, que la cobija del tigre ya la apartó..."},
+    { nombre: "El Acordeón", archivo: "El Acordeón.png", cantada: "¿Será un piano? ¿Será una armónica? No, es..."},
+    { nombre: "La Flauta", archivo: "La Flauta.png", cantada: "Así como en el silbo estaba Dios, con suaves notas también se alaba al Señor..."},
+    { nombre: "Las Tablas", archivo: "Las Tablas.png", cantada: "Moisés bajó con ellas escritas en piedra de la montaña..."},
+    { nombre: "El Amén", archivo: "El Amén.png", cantada: "La firme afirmación de fe y convicción al terminar la oración..."},
+    { nombre: "El Violín", archivo: "El Violín.png", cantada: "Cuatro cuerdas de dulce sonido para adorar al Dios bendito..."},
+    { nombre: "Éxodo", archivo: "Éxodo.png", cantada: "La salida hacia la libertad que tuvo que cruzar la desierta inmensidad..."},
+    { nombre: "La Biblia", archivo: "La Biblia.png", cantada: "La que es viva y eficaz y más cortante que espada de dos filos..."},
+    { nombre: "El Pandero", archivo: "El Pandero.png", cantada: "Como María al cruzar el mar, que resuene el metal con gozo y libertad..."},
+    { nombre: "Santiago", archivo: "Santiago.png", cantada: "El que dijo que la lengua, aunque pequeña, siempre anda metiendo en problemas..."},
+    { nombre: "El Soñador", archivo: "El Soñador.png", cantada: "No está dormido en la predicación, sino escuchando la revelación del Señor con los ojos cerrados..."},
+    { nombre: "Los Pollos", archivo: "Los Pollos.png", cantada: "A la leña, con salsa y tostadas… la salvación para el hermano que el domingo no cocinó..."},
+    { nombre: "Proverbios", archivo: "Proverbios.png", cantada: "De la pluma del rey Salomón escribió la gran enseñanza que Dios nos dejó..."},
+    { nombre: "El Multimedia", archivo: "El Multimedia.png", cantada: "Demos un ¡Gloria a Dios! En lo que esperan que resuelvan unos problemitas técnicos..."},
+    { nombre: "Apocalipsis", archivo: "Apocalipsis.png", cantada: "La revelación del fin, una promesa de que el Rey está por venir..."},
+    { nombre: "La Trompeta", archivo: "La Trompeta.png", cantada: "En un abrir y cerrar de ojos al escucharla seremos transformados..."},
+    { nombre: "El Café", archivo: "El Café.png", cantada: "Si el vaso de agua recompensa alcanzó, ¡imagina la taza con dos de azúcar y leche que el alma alegró!..."},
+    { nombre: "El Canto", archivo: "El Canto.png", cantada: "No importa si desafinas poquito o cantas bajito, todo lo que respira alabe al Señor..."}
+];
+
+
+    /* ========================================
+       GAME VARIABLES
+       ======================================== */
+
+    let cartas = [...mazoOriginal];
+
+    let cartasCantadas = 0;
+
+
+    /* ========================================
+       CREATE THE 54-CARD GRID
+       ======================================== */
+
+    function crearHistorial() {
+
+        const historial =
+            document.getElementById("historial");
+
+        historial.innerHTML = "";
+
+
+        mazoOriginal.forEach(function(carta, indice) {
+
+            const miniCard =
+                document.createElement("div");
+
+            miniCard.className =
+                "mini-card no-llamada";
+
+            miniCard.textContent =
+                indice + 1;
+
+            miniCard.id =
+                "mini-" + carta.archivo;
+
+            historial.appendChild(miniCard);
+
+        });
+
+    }
+
+
+    /* ========================================
+       UPDATE THE GRID
+       ======================================== */
+
+    function actualizarHistorial(carta) {
+
+        const miniCard =
+            document.getElementById(
+                "mini-" + carta.archivo
+            );
+
+
+        if (miniCard) {
+
+            miniCard.className =
+                "mini-card actual";
+
+        }
+
+
+        const actuales =
+            document.querySelectorAll(".actual");
+
+
+        actuales.forEach(function(elemento) {
+
+            if (elemento !== miniCard) {
+
+                elemento.className =
+                    "mini-card llamada";
+
+            }
+
+        });
+
+    }
+
+
+    /* ========================================
+       RESET / NEW GAME
+       ======================================== */
+
+    function nuevaPartida() {
+
+        cartas = [...mazoOriginal];
+
+        cartasCantadas = 0;
+
+
+        document.getElementById(
+            "imagenCarta"
+        ).src =
+            "ccards/Back.png";
+
+
+        document.getElementById(
+            "imagenCarta"
+        ).alt =
+            "Lotería de la Fe";
+
+
+        document.getElementById(
+            "nombreCarta"
+        ).textContent =
+            "¡Listos para comenzar!";
+
+
+        document.getElementById(
+            "contador"
+        ).textContent =
+            "0 de 54 cartas";
+
+
+        document.getElementById(
+            "textoCantada"
+        ).textContent =
+            "QUE NO LE DIGAN, QUE NO LE CUENTEN...";
+
+
+        crearHistorial();
+
+    }
+
+
+    /* ========================================
+       CARD SWAP
+       ======================================== */
+
+    function cambiarCarta(nuevaImagen, nombre, cantada) {
+
+        const imagen =
+            document.getElementById("imagenCarta");
+
+
+        imagen.classList.remove("swap");
+
+        /*
+           Force the browser to restart the animation.
+        */
+
+        void imagen.offsetWidth;
+
+
+        imagen.classList.add("swap");
+
+
+        /*
+           At 300 ms the card is invisible,
+           so we replace it at the midpoint.
+        */
+
+        setTimeout(function() {
+
+            imagen.src = nuevaImagen;
+            imagen.alt = nombre;
+
+
+            document.getElementById(
+                "nombreCarta"
+            ).textContent =
+                nombre;
+
+
+            document.getElementById(
+                "textoCantada"
+            ).textContent =
+                cantada;
+
+        }, 300);
+
+    }
+
+
+    /* ========================================
+       CALL A CARD
+       ======================================== */
+
+    document.getElementById("boton").onclick =
+        function() {
+
+            if (cartas.length === 0) {
+
+                document.getElementById(
+                    "nombreCarta"
+                ).textContent =
+                    "¡Ya se cantaron todas las cartas!";
+
+                document.getElementById(
+                    "textoCantada"
+                ).textContent =
+                    "¡YA SE CANTARON TODAS!";
+
+                return;
+
+            }
+
+
+            const posicion =
+                Math.floor(
+                    Math.random() * cartas.length
+                );
+
+
+            const carta =
+                cartas[posicion];
+
+
+            cambiarCarta(
+                "ccards/" + carta.archivo,
+                carta.nombre,
+                carta.cantada
+            );
+
+
+            cartas.splice(posicion, 1);
+
+            cartasCantadas++;
+
+
+            document.getElementById(
+                "contador"
+            ).textContent =
+                "Carta " +
+                cartasCantadas +
+                " de 54";
+
+
+            actualizarHistorial(carta);
+
+        };
+
+
+    /* ========================================
+       NEW GAME BUTTON
+       ======================================== */
+
+    document.getElementById("nuevoJuego").onclick =
+        function() {
+
+            nuevaPartida();
+
+        };
+
+
+    /* ========================================
+       LOTERÍA POPUP
+       ======================================== */
+
+    const loteriaOverlay =
+        document.getElementById("loteriaOverlay");
+
+    const loteriaPregunta =
+        document.getElementById("loteriaPregunta");
+
+    const victoria =
+        document.getElementById("victoria");
+
+    const gifVictoria =
+        document.getElementById("gifVictoria");
+
+
+    document.getElementById("loteria").onclick =
+        function() {
+
+            loteriaPregunta.style.display = "block";
+
+            victoria.style.display = "none";
+
+            loteriaOverlay.style.display = "flex";
+
+        };
+
+
+    /* ========================================
+       FALSE ALARM
+       ======================================== */
+
+    document.getElementById("falsaAlarma").onclick =
+        function() {
+
+            loteriaOverlay.style.display = "none";
+
+        };
+
+
+    /* ========================================
+       CONFIRM LOTERÍA
+       ======================================== */
+
+    document.getElementById("confirmarLoteria").onclick =
+        function() {
+
+            loteriaPregunta.style.display = "none";
+
+            victoria.style.display = "block";
+
+
+            /*
+               Restart the GIF every time.
+            */
+
+	const numeroGif =
+	    Math.floor(Math.random() * 7) + 1;
+	
+	gifVictoria.src =
+	    "gif/" + numeroGif + ".gif?" +
+	    Date.now();	
+
+
+            setTimeout(function() {
+
+                loteriaOverlay.style.display = "none";
+
+                victoria.style.display = "none";
+
+                loteriaPregunta.style.display = "block";
+
+                nuevaPartida();
+
+            }, 4000);
+
+        };
+
+
+
+    /* ========================================
+       ARTWORK GALLERY
+       ======================================== */
+
+    const galeriaOverlay =
+        document.getElementById("galeriaOverlay");
+
+    const galeriaGrid =
+        document.getElementById("galeriaGrid");
+
+    const galeriaPreview =
+        document.getElementById("galeriaPreview");
+
+    const galeriaPreviewImagen =
+        document.getElementById("galeriaPreviewImagen");
+
+    const galeriaPreviewCantada =
+        document.getElementById("galeriaPreviewCantada");
+
+    let galeriaSeleccion =
+        0;
+
+
+    function crearGaleria() {
+
+        galeriaGrid.innerHTML = "";
+
+        mazoOriginal.forEach(function(carta, indice) {
+
+            const tarjeta =
+                document.createElement("button");
+
+            tarjeta.type = "button";
+            tarjeta.className = "galeria-card";
+
+            const imagen =
+                document.createElement("img");
+
+            imagen.src =
+                "ccards/" + carta.archivo;
+
+            imagen.alt =
+                carta.nombre;
+
+            const numero =
+                document.createElement("span");
+
+            numero.textContent =
+                "Carta " + (indice + 1);
+
+            tarjeta.appendChild(imagen);
+            tarjeta.appendChild(numero);
+
+            tarjeta.addEventListener("click", function() {
+
+                abrirPreview(indice);
+
+            });
+
+            galeriaGrid.appendChild(tarjeta);
+
+        });
+
+    }
+
+
+    function abrirGaleria() {
+
+        crearGaleria();
+
+        galeriaOverlay.style.display = "block";
+
+    }
+
+
+    function cerrarGaleria() {
+
+        galeriaOverlay.style.display = "none";
+
+        cerrarPreview();
+
+    }
+
+
+    function abrirPreview(indice) {
+
+        if (indice < 0 || indice >= mazoOriginal.length) {
+            return;
+        }
+
+        galeriaSeleccion = indice;
+
+        const carta =
+            mazoOriginal[galeriaSeleccion];
+
+        galeriaPreviewImagen.src =
+            "ccards/" + carta.archivo;
+
+        galeriaPreviewImagen.alt =
+            carta.nombre;
+
+        galeriaPreviewNumero.textContent =
+            "Carta " + (galeriaSeleccion + 1) +
+            " de " + mazoOriginal.length;
+
+        galeriaPreviewCantada.textContent =
+            carta.cantada;
+
+        galeriaPreview.style.display = "flex";
+
+    }
+
+
+    function cerrarPreview() {
+
+        galeriaPreview.style.display = "none";
+
+    }
+
+
+    function moverPreview(direccion) {
+
+        let nuevoIndice =
+            galeriaSeleccion + direccion;
+
+        if (nuevoIndice < 0) {
+            nuevoIndice = mazoOriginal.length - 1;
+        }
+
+        if (nuevoIndice >= mazoOriginal.length) {
+            nuevoIndice = 0;
+        }
+
+        abrirPreview(nuevoIndice);
+
+    }
+
+
+    document.getElementById("abrirGaleria").onclick =
+        function() {
+
+            abrirGaleria();
+
+        };
+
+
+    document.getElementById("cerrarGaleria").onclick =
+        function() {
+
+            cerrarGaleria();
+
+        };
+
+
+    document.getElementById("cerrarPreview").onclick =
+        function() {
+
+            cerrarPreview();
+
+        };
+
+
+    document.getElementById("galeriaAnterior").onclick =
+        function() {
+
+            moverPreview(-1);
+
+        };
+
+
+    document.getElementById("galeriaSiguiente").onclick =
+        function() {
+
+            moverPreview(1);
+
+        };
+
+
+    galeriaPreview.addEventListener("click", function(evento) {
+
+        if (evento.target === galeriaPreview) {
+            cerrarPreview();
+        }
+
+    });
+
+
+    document.addEventListener("keydown", function(evento) {
+
+        if (galeriaPreview.style.display === "flex") {
+
+            if (evento.key === "Escape") {
+                cerrarPreview();
+            }
+
+            if (evento.key === "ArrowLeft") {
+                moverPreview(-1);
+            }
+
+            if (evento.key === "ArrowRight") {
+                moverPreview(1);
+            }
+
+        } else if (galeriaOverlay.style.display === "block") {
+
+            if (evento.key === "Escape") {
+                cerrarGaleria();
+            }
+
+        }
+
+    });
+
+
+    /* ========================================
+       STARTUP
+       ======================================== */
+
+    crearHistorial();
+
+
+</script>
+
+</body>
+
+</html>

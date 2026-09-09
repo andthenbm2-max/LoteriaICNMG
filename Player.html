@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lotería de la Fe — Tablero del Jugador</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Arial,sans-serif;background:#dceef0;color:#183642}
+body{
+padding:clamp(8px,1.5vw,18px);
+background:
+linear-gradient(rgba(220,238,240,.60),rgba(220,238,240,.60)),
+url("Background.png") center / cover no-repeat fixed;
+background-repeat:repeat,repeat;
+background-size:auto,250px auto;
+background-position:0 0,center top;
+}
+html,body{height:100%;overflow:hidden}
+.app{
+width:min(1100px,100%);
+height:100%;
+margin:0 auto;
+display:flex;
+flex-direction:column;
+}
+header{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:10px;flex:0 0 auto}
+h1{margin:0;font-size:clamp(24px,4vw,40px)}
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+button{border:0;border-radius:12px;background:#183642;color:#fff;font-weight:bold;cursor:pointer;padding:11px 16px;font-size:15px}
+button:active{transform:scale(.98)}
+.hardcore-btn{background:#c62828;color:#fff}
+.hardcore-btn:hover{background:#a91f1f}
+/* Menú de selección con imágenes individuales */
+.selection-overlay{background:rgba(0,0,0,.72);padding:clamp(8px,2vw,24px);z-index:2000;overflow:auto}
+.selection-shell{position:relative;width:min(96vw,1500px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(10px,1.4vw,18px);margin:auto}
+.selection-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(7px,1vw,14px);width:100%;align-items:stretch}
+.selection-card{position:relative;display:block;width:100%;aspect-ratio:2 / 3;border:3px solid rgba(255,255,255,.18);border-radius:14px;overflow:hidden;padding:0;background:#18232a;cursor:pointer;filter:grayscale(1) brightness(.72);opacity:1;transition:filter .2s,opacity .2s,transform .2s,border-color .2s,box-shadow .2s}
+.selection-card img{display:block;width:100%;height:100%;object-fit:cover}
+.selection-card:hover{filter:grayscale(.35) brightness(1);opacity:1;transform:translateY(-3px)}
+.selection-card.selected{filter:none;opacity:1;border-color:#ffd54f;box-shadow:0 0 0 3px rgba(255,213,79,.35),0 0 26px rgba(255,213,79,.72),0 12px 25px rgba(0,0,0,.4);transform:translateY(-4px)}
+.selection-card.selected::after{content:"✓";position:absolute;right:8px;top:8px;width:42px;height:42px;border-radius:50%;background:#fff;color:#c62828;font-size:28px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,.4)}
+.selection-confirm{width:min(390px,80vw);border:0;border-radius:14px;background:#c62828;color:#fff;cursor:pointer;padding:14px 22px;font-size:clamp(16px,2vw,20px);font-weight:900;box-shadow:0 6px 16px rgba(0,0,0,.35);transition:transform .18s,background .18s,opacity .18s}
+.selection-confirm:not(:disabled):hover{background:#a91f1f;transform:translateY(-2px)}
+.selection-confirm:disabled{background:#687277;opacity:.65;cursor:not-allowed;box-shadow:none}
+.selection-close{position:absolute;right:0;top:0;width:48px;aspect-ratio:1;border:0;border-radius:12px;background:rgba(24,54,66,.9);color:#fff;cursor:pointer;font-size:25px;font-weight:900;z-index:5;box-shadow:0 4px 12px rgba(0,0,0,.35)}
+.selection-close:hover{background:#c62828}
+.selection-label{min-height:24px;color:#fff;font-weight:900;font-size:clamp(13px,1.4vw,21px);text-align:center;text-shadow:0 2px 5px #000}
+@media(max-width:1100px){.selection-shell{width:min(96vw,900px)}.selection-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){.selection-overlay{padding:8px}.selection-shell{width:96vw;gap:9px}.selection-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.selection-card{border-radius:10px;border-width:2px}.selection-card.selected::after{width:30px;height:30px;font-size:20px;right:4px;top:4px}.selection-close{width:38px;font-size:20px}}
+.info{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;background:#fff;border-radius:14px;padding:10px 14px;min-height:42px}
+#contador{font-weight:bold;text-align:center;width:100%}
+.hint{position:absolute;right:14px;color:#53666d;font-size:14px}
+.board{
+  width:100%;
+  height:100%;
+  min-width:0;
+  min-height:0;
+  align-self:center;
+  flex:1 1 auto;
+  display:grid;
+  grid-template-columns:repeat(var(--cols,4),minmax(0,1fr));
+  grid-auto-rows:1fr;
+  gap:clamp(5px,1vw,12px);
+  background:#183642;
+  padding:clamp(6px,1.2vw,14px);
+  border-radius:18px;
+  overflow:hidden;
+}
+.slot{position:relative;min-width:0;min-height:0;border:0;padding:0;border-radius:9px;overflow:hidden;background:#eee;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,.15)}
+.slot img{display:block;width:100%;height:100%;object-fit:contain}
+.slot .mark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(53,203,208,.48);opacity:0;transition:opacity .12s}
+.slot.marked .mark{opacity:1}
+.slot .check{width:clamp(35px,7vw,70px);height:clamp(35px,7vw,70px);border-radius:50%;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;font-size:clamp(24px,5vw,46px);font-weight:900;color:#183642;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.slot:focus-visible{outline:4px solid #35cbd0;outline-offset:3px}
+.empty{display:flex;align-items:center;justify-content:center;height:100%;color:#777;font-weight:bold}
+@media(max-width:600px){
+ body{padding:8px}
+ header{align-items:flex-start;flex-direction:column}
+ .controls{width:100%}
+ .controls button{flex:1}
+ .board{gap:5px;padding:6px;border-radius:12px}
+ .info{min-height:42px;padding:10px 12px}
+ .hint{display:none}
+}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);align-items:center;justify-content:center;z-index:1000;padding:18px}
+.loteria-box{background:#fff;padding:clamp(20px,4vw,32px);border-radius:18px;width:min(90%,700px);text-align:center}
+.loteria-box h2{margin:0 0 8px;font-size:clamp(28px,5vw,44px)}
+.loteria-box p{font-size:clamp(18px,3vw,25px);margin:0 0 22px}
+.loteria-buttons{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.loteria-buttons button{padding:14px 10px;font-size:clamp(14px,2vw,20px)}
+.victoria{display:none}.victoria-gif{display:block;width:min(100%,700px);max-height:65vh;object-fit:contain;margin:0 auto 10px;border-radius:12px}
+.victoria-icon{font-size:clamp(60px,12vw,110px);line-height:1}
+</style>
+</head>
+<body>
+<main class="app">
+<header>
+  <h1>🎴 Lotería de la Fe</h1>
+  <div class="controls">
+    <button id="nuevo">NUEVA PARTIDA</button>
+    <button id="limpiar">LIMPIAR MARCAS</button>
+    <button id="hardcore" class="hardcore-btn">DIFICULTAD</button>
+  </div>
+</header>
+
+<section class="info">
+  <div id="contador" aria-live="polite">0 de 16 marcadas</div>
+  <div class="hint">Toca una carta para marcarla o desmarcarla.</div>
+</section>
+
+<section id="board" class="board" aria-label="Tablero de Lotería"></section>
+
+<div id="hardcoreOverlay" class="overlay selection-overlay" aria-hidden="true">
+  <div class="selection-shell">
+    <button type="button" id="selectionClose" class="selection-close" aria-label="Cerrar selección de nivel">×</button>
+    <div class="selection-grid" aria-label="Niveles de dificultad">
+      <button type="button" class="selection-card" data-level="16" aria-label="Modo Normal — 16 cartas"><img src="Selection Menu/Normal.png" alt="Modo Normal — 16 cartas"></button>
+      <button type="button" class="selection-card" data-level="24" aria-label="Nivel 1 — Peregrino — 24 cartas"><img src="Selection Menu/Peregrino.png" alt="Nivel 1 — Peregrino — 24 cartas"></button>
+      <button type="button" class="selection-card" data-level="32" aria-label="Nivel 2 — El Desierto — 32 cartas"><img src="Selection Menu/Desierto.png" alt="Nivel 2 — El Desierto — 32 cartas"></button>
+      <button type="button" class="selection-card" data-level="40" aria-label="Nivel 3 — La Tribulación — 40 cartas"><img src="Selection Menu/Tribulacion.png" alt="Nivel 3 — La Tribulación — 40 cartas"></button>
+      <button type="button" class="selection-card" data-level="48" aria-label="Nivel 4 — Apocalipsis — 48 cartas"><img src="Selection Menu/Apocalipsis.png" alt="Nivel 4 — Apocalipsis — 48 cartas"></button>
+    </div>
+    <div id="hardcoreSelectedLabel" class="selection-label">Modo Normal — 16 cartas</div>
+    <button type="button" id="hardcoreConfirm" class="selection-confirm" aria-label="Confirmar nivel">CONFIRMAR NIVEL</button>
+  </div>
+</div>
+</main>
+
+<div id="loteriaOverlay" class="overlay" aria-hidden="true">
+  <div class="loteria-box">
+    <div id="loteriaPregunta">
+      <h2>🎉 ¡LOTERÍA!</h2>
+      <p>¿Es una lotería válida?</p>
+      <div class="loteria-buttons">
+        <button type="button" id="confirmar">CONFIRMADO 🎉</button>
+        <button type="button" id="falsa">FALSA ALARMA</button>
+      </div>
+    </div>
+    <div id="victoria" class="victoria">
+      <img id="gifVictoria" class="victoria-gif" src="gif/1.gif" alt="¡Victoria!">
+      <h2>¡LOTERÍA!</h2>
+      <p id="victoriaTexto">¡Tablero completado!</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const mazo = [
+        { nombre: "El Pastor", archivo: "El Pastor.png" },
+        { nombre: "El Maná", archivo: "El Maná.png" },
+        { nombre: "El Celular", archivo: "El Celular.png" },
+        { nombre: "El Piano", archivo: "El piano.png" },
+        { nombre: "Daniel", archivo: "Daniel.png" },
+        { nombre: "Los Cacahuates", archivo: "Los Cacahuates.png" },
+        { nombre: "La Reportera", archivo: "La Reportera.png" },
+        { nombre: "El Proyector", archivo: "El Proyector.png" },
+        { nombre: "El Pozole", archivo: "El Pozole.png" },
+        { nombre: "La Zarza", archivo: "La Zarza.png" },
+        { nombre: "El Desvelado", archivo: "El Desvelado.png" },
+        { nombre: "El Cuaderno", archivo: "El Cuaderno.png" },
+        { nombre: "La Corona", archivo: "La Corona.png" },
+        { nombre: "El Bajo", archivo: "El Bajo.png" },
+        { nombre: "El Evangelista", archivo: "El Evangelista.png" },
+        { nombre: "El Atril", archivo: "El Atril.png" },
+        { nombre: "El Aseo", archivo: "El Aseo.png" },
+        { nombre: "La Oración", archivo: "La Oración.png" },
+        { nombre: "El Redimido", archivo: "El Redimido.png" },
+        { nombre: "El Juicio", archivo: "El Juicio.png" },
+        { nombre: "El Micrófono", archivo: "El Micrófono.png" },
+        { nombre: "Génesis", archivo: "Génesis.png" },
+        { nombre: "El Abanico", archivo: "El Abanico.png" },
+        { nombre: "La Guitarra", archivo: "La Guitarra.png" },
+        { nombre: "El Mar Rojo", archivo: "El Mar Rojo.png" },
+        { nombre: "El Director", archivo: "El Director.png" },
+        { nombre: "La Botella", archivo: "La Botella.png" },
+        { nombre: "La Tumba", archivo: "La Tumba.png" },
+        { nombre: "El Himnario", archivo: "El Himnario.png" },
+        { nombre: "El Diezmo", archivo: "El Diezmo.png" },
+        { nombre: "Las Percusiones", archivo: "Las Percusiones.png" },
+        { nombre: "El Arca", archivo: "El Arca.png" },
+        { nombre: "El Niño", archivo: "El Niño.png" },
+        { nombre: "El Saxofón", archivo: "El Saxofón.png" },
+        { nombre: "El Púlpito", archivo: "El Púlpito.png" },
+        { nombre: "Salmos", archivo: "Salmos.png" },
+        { nombre: "La Silla", archivo: "La Silla.png" },
+        { nombre: "El Acordeón", archivo: "El Acordeón.png" },
+        { nombre: "La Flauta", archivo: "La Flauta.png" },
+        { nombre: "Las Tablas", archivo: "Las Tablas.png" },
+        { nombre: "El Amén", archivo: "El Amén.png" },
+        { nombre: "El Violín", archivo: "El Violín.png" },
+        { nombre: "Éxodo", archivo: "Éxodo.png" },
+        { nombre: "La Biblia", archivo: "La Biblia.png" },
+        { nombre: "El Pandero", archivo: "El Pandero.png" },
+        { nombre: "Santiago", archivo: "Santiago.png" },
+        { nombre: "El Soñador", archivo: "El Soñador.png" },
+        { nombre: "Los Pollos", archivo: "Los Pollos.png" },
+        { nombre: "Proverbios", archivo: "Proverbios.png" },
+        { nombre: "El Multimedia", archivo: "El Multimedia.png" },
+        { nombre: "Apocalipsis", archivo: "Apocalipsis.png" },
+        { nombre: "La Trompeta", archivo: "La Trompeta.png" },
+        { nombre: "El Café", archivo: "El Café.png" },
+        { nombre: "El Canto", archivo: "El Canto.png" }
+];
+
+const board = document.getElementById("board");
+const contador = document.getElementById("contador");
+const nuevo = document.getElementById("nuevo");
+const limpiar = document.getElementById("limpiar");
+const hardcore = document.getElementById("hardcore");
+const hardcoreOverlay = document.getElementById("hardcoreOverlay");
+const hardcoreLevels = document.querySelectorAll(".selection-card");
+const hardcoreConfirm = document.getElementById("hardcoreConfirm");
+const hardcoreSelectedLabel = document.getElementById("hardcoreSelectedLabel");
+const selectionClose = document.getElementById("selectionClose");
+const overlay = document.getElementById("loteriaOverlay");
+const pregunta = document.getElementById("loteriaPregunta");
+const victoria = document.getElementById("victoria");
+const gifVictoria = document.getElementById("gifVictoria");
+const confirmar = document.getElementById("confirmar");
+const victoriaTexto = document.getElementById("victoriaTexto");
+const falsa = document.getElementById("falsa");
+
+let tablero = [];
+let marcadas = new Set();
+let objetivo = 16;
+let modoHardcore = false;
+let nombreNivel = "";
+
+function mezclar(array) {
+  const copia = [...array];
+  for (let i = copia.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copia[i], copia[j]] = [copia[j], copia[i]];
+  }
+  return copia;
+}
+
+function actualizarContador() {
+  contador.textContent = `${marcadas.size} de ${objetivo} marcadas`;
+}
+
+function mostrarLoteria() {
+  pregunta.style.display = "block";
+  victoria.style.display = "none";
+  overlay.style.display = "flex";
+  overlay.setAttribute("aria-hidden", "false");
+}
+
+function cerrarLoteria() {
+  overlay.style.display = "none";
+  overlay.setAttribute("aria-hidden", "true");
+}
+
+function cerrarHardcore() {
+  hardcoreOverlay.style.display = "none";
+  hardcoreOverlay.setAttribute("aria-hidden", "true");
+}
+
+function mostrarHardcore() {
+  // Al abrir el menú, se mantiene seleccionado el nivel actual.
+  nivelHardcoreSeleccionado = objetivo;
+  hardcoreLevels.forEach(b => b.classList.toggle("selected", Number(b.dataset.level) === objetivo));
+  actualizarEtiquetaNivel();
+  hardcoreOverlay.style.display = "flex";
+  hardcoreOverlay.setAttribute("aria-hidden", "false");
+}
+
+function celebrar() {
+  pregunta.style.display = "none";
+  victoria.style.display = "block";
+  victoriaTexto.textContent = modoHardcore
+    ? `¡${nombreNivel}! Completaste ${objetivo} cartas.`
+    : "¡Tablero completado!";
+
+  const numeroGif = Math.floor(Math.random() * 7) + 1;
+  gifVictoria.src = "gif/" + numeroGif + ".gif?" + Date.now();
+
+  setTimeout(() => {
+    cerrarLoteria();
+    nuevaPartida();
+  }, 4000);
+}
+
+function ajustarLayout() {
+  const app = document.querySelector(".app");
+  const headerH = document.querySelector("header").offsetHeight;
+  const infoH = document.querySelector(".info").offsetHeight;
+  const styles = getComputedStyle(app);
+  const gap = parseFloat(styles.gap) || 0;
+  const disponibleW = app.clientWidth;
+  const disponibleH = Math.max(100, app.clientHeight - headerH - infoH - gap * 2 - 6);
+
+  const candidatos = [2,3,4,5,6,7,8,9,10,12];
+  const gapPx = Math.max(5, Math.min(12, window.innerWidth * 0.01));
+  const padPx = Math.max(6, Math.min(14, window.innerWidth * 0.012));
+  const total = tablero.length;
+
+  const opciones = candidatos.map(cols => {
+    const filas = Math.ceil(total / cols);
+    const anchoCartas = (disponibleW - padPx * 2 - gapPx * (cols - 1)) / cols;
+    const altoCartas = (disponibleH - padPx * 2 - gapPx * (filas - 1)) / filas;
+    const lado = Math.min(anchoCartas, altoCartas * 0.7);
+    return { cols, filas, lado };
+  }).filter(x => x.lado > 0);
+
+  const mejor = Math.max(...opciones.map(x => x.lado));
+  // En el tablero normal preferimos 4x4; en Hardcore dejamos que el
+  // algoritmo aproveche el espacio para acomodar más cartas.
+  let elegida;
+  if (!modoHardcore) {
+    elegida = opciones.find(x => x.cols === 4);
+    const alternativa = opciones.find(x => x.lado === mejor);
+    if (!elegida || alternativa.lado > elegida.lado * 1.12) elegida = alternativa;
+  } else {
+    elegida = opciones.find(x => x.lado === mejor);
+  }
+
+  board.style.setProperty("--cols", elegida.cols);
+  board.style.gridTemplateRows = `repeat(${elegida.filas}, minmax(0, 1fr))`;
+
+  const cardW = elegida.lado;
+  const boardW = cardW * elegida.cols + gapPx * (elegida.cols - 1) + padPx * 2;
+  const boardH = (cardW / 0.7) * elegida.filas + gapPx * (elegida.filas - 1) + padPx * 2;
+  board.style.width = `${Math.min(disponibleW, boardW)}px`;
+  board.style.height = `${Math.min(disponibleH, boardH)}px`;
+}
+
+function renderizar() {
+  board.innerHTML = "";
+
+  tablero.forEach((carta, indice) => {
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "slot";
+    boton.setAttribute("aria-label", `${carta.nombre} — sin marcar`);
+
+    const imagen = document.createElement("img");
+    imagen.src = "ccards/" + carta.archivo;
+    imagen.alt = carta.nombre;
+
+    const mark = document.createElement("span");
+    mark.className = "mark";
+    mark.setAttribute("aria-hidden", "true");
+
+    const check = document.createElement("span");
+    check.className = "check";
+    check.textContent = "✓";
+
+    mark.appendChild(check);
+    boton.appendChild(imagen);
+    boton.appendChild(mark);
+    board.appendChild(boton);
+
+    boton.addEventListener("click", () => {
+      if (marcadas.has(indice)) {
+        marcadas.delete(indice);
+        boton.classList.remove("marked");
+        boton.setAttribute("aria-label", `${carta.nombre} — sin marcar`);
+      } else {
+        marcadas.add(indice);
+        boton.classList.add("marked");
+        boton.setAttribute("aria-label", `${carta.nombre} — marcada`);
+
+        if (marcadas.size === objetivo) {
+          setTimeout(mostrarLoteria, 120);
+        }
+      }
+      actualizarContador();
+    });
+  });
+
+  actualizarContador();
+  ajustarLayout();
+}
+
+function nuevaPartida() {
+  tablero = mezclar(mazo).slice(0, objetivo);
+  marcadas.clear();
+  cerrarLoteria();
+  renderizar();
+}
+
+function limpiarMarcas() {
+  marcadas.clear();
+  renderizar();
+}
+
+nuevo.addEventListener("click", nuevaPartida);
+limpiar.addEventListener("click", limpiarMarcas);
+hardcore.addEventListener("click", mostrarHardcore);
+const nombresNiveles = {
+  16: "Modo Normal",
+  24: "Peregrino",
+  32: "El Desierto",
+  40: "La Tribulación",
+  48: "Apocalipsis"
+};
+const numerosNiveles = {16:0,24:1,32:2,40:3,48:4};
+let nivelHardcoreSeleccionado = 16;
+
+function actualizarEtiquetaNivel(){
+  const nivel = numerosNiveles[nivelHardcoreSeleccionado];
+  const nombre = nombresNiveles[nivelHardcoreSeleccionado];
+  hardcoreSelectedLabel.textContent = nivel === 0
+    ? `${nombre} — 16 cartas`
+    : `Nivel ${nivel} — ${nombre} — ${nivelHardcoreSeleccionado} cartas`;
+}
+
+hardcoreLevels.forEach(boton => {
+  boton.addEventListener("click", () => {
+    nivelHardcoreSeleccionado = Number(boton.dataset.level);
+    hardcoreLevels.forEach(b => b.classList.toggle("selected", b === boton));
+    actualizarEtiquetaNivel();
+  });
+});
+
+hardcoreConfirm.addEventListener("click", () => {
+  objetivo = nivelHardcoreSeleccionado;
+  modoHardcore = objetivo !== 16;
+  nombreNivel = nombresNiveles[objetivo];
+  cerrarHardcore();
+  nuevaPartida();
+});
+
+selectionClose.addEventListener("click", () => {
+  // Si se cierra el menú sin confirmar, conserva el nivel que ya estaba jugando.
+  nivelHardcoreSeleccionado = objetivo;
+  cerrarHardcore();
+});
+
+falsa.addEventListener("click", cerrarLoteria);
+confirmar.addEventListener("click", celebrar);
+window.addEventListener("resize", ajustarLayout);
+if (window.visualViewport) window.visualViewport.addEventListener("resize", ajustarLayout);
+
+overlay.addEventListener("click", (event) => {
+  if (event.target === overlay) cerrarLoteria();
+});
+
+hardcoreOverlay.addEventListener("click", (event) => {
+  // No cerramos al tocar fuera: la selección requiere una decisión explícita.
+});
+
+nivelHardcoreSeleccionado = 16;
+objetivo = 16;
+modoHardcore = false;
+nombreNivel = nombresNiveles[16];
+nuevaPartida();
+// El selector es lo primero que ve el jugador.
+mostrarHardcore();
+</script>
+</body>
+</html>
