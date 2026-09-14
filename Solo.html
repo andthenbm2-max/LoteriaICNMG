@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#151515">
+<title>Lotería de la Fe — Modo Solo</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;color:#fff}
+body{
+  min-height:100vh;min-height:100dvh;display:flex;justify-content:center;
+  background:linear-gradient(rgba(0,0,0,.48),rgba(0,0,0,.78)),url("Background.png") center/cover fixed no-repeat,#151515;
+}
+.app{width:min(1100px,96vw);min-height:100vh;min-height:100dvh;padding:clamp(10px,2vw,22px);display:flex;flex-direction:column;gap:12px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{margin:0;font-size:clamp(1.2rem,3vw,2rem);letter-spacing:.04em}
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;color:#fff;background:rgba(20,20,20,.78);border:1px solid rgba(255,255,255,.35);border-radius:12px;padding:10px 14px;min-height:44px;cursor:pointer}
+button:hover{background:rgba(255,255,255,.14)}
+button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.primary{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.7)}
+.status{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 14px;border-radius:14px;background:rgba(15,15,15,.62);border:1px solid rgba(255,255,255,.16)}
+#progress{font-weight:700}
+#levelName{opacity:.8}
+.game{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:14px;min-height:0;flex:1}
+.current{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;padding:12px;border-radius:18px;background:rgba(10,10,10,.52);border:1px solid rgba(255,255,255,.15)}
+.card-wrap{width:min(52vw,420px);aspect-ratio:7/10;max-height:65vh;display:flex;align-items:center;justify-content:center}
+#cardImage{width:100%;height:100%;object-fit:contain;border-radius:12px;filter:drop-shadow(0 14px 25px rgba(0,0,0,.45))}
+.card-name{margin:10px 0 0;text-align:center;font-size:clamp(1.1rem,2.5vw,1.7rem);font-weight:800}
+.call-text{margin-top:5px;text-align:center;opacity:.78;font-size:clamp(.85rem,1.8vw,1rem)}
+.next-info{margin-top:10px;opacity:.72;font-size:.85rem}
+.history{min-height:0;display:flex;flex-direction:column;padding:10px;border-radius:18px;background:rgba(10,10,10,.52);border:1px solid rgba(255,255,255,.15)}
+.history h2{font-size:.9rem;margin:2px 4px 9px;opacity:.8}
+#historyGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;overflow:auto;padding-right:2px}
+.mini{border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.18);background:#111}
+.mini img{display:block;width:100%;aspect-ratio:7/10;object-fit:cover}
+.mini.current{border-color:#fff}
+.overlay{position:fixed;inset:0;z-index:10;display:none;align-items:center;justify-content:center;padding:14px;background:rgba(0,0,0,.72);backdrop-filter:blur(8px)}
+.panel{width:min(1000px,96vw);max-height:94vh;overflow:auto;padding:18px;border-radius:22px;background:rgba(18,18,18,.96);border:1px solid rgba(255,255,255,.2)}
+.panel-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+.panel h2{margin:0;font-size:clamp(1.2rem,3vw,1.8rem)}
+.levels{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.level{padding:5px;border:2px solid rgba(255,255,255,.18);border-radius:12px;background:#111;cursor:pointer}
+.level img{display:block;width:100%;aspect-ratio:7/10;object-fit:cover;border-radius:7px}
+.level.selected{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.18)}
+.level-caption{font-size:.78rem;font-weight:700;margin:7px 2px 3px}
+.level-speed{font-size:.72rem;opacity:.65;margin:0 2px 4px}
+.panel-bottom{display:flex;justify-content:center;margin-top:14px}
+.empty{opacity:.55;text-align:center;padding:15px;font-size:.85rem}
+@media (max-width:700px){
+  .game{grid-template-columns:1fr}
+  .history{max-height:190px}
+  #historyGrid{grid-template-columns:repeat(6,1fr)}
+  .card-wrap{width:min(58vw,330px);max-height:55vh}
+}
+@media (max-width:500px){
+  .levels{grid-template-columns:repeat(2,1fr)}
+  .levels .level:last-child{grid-column:span 2;max-width:50%;justify-self:center}
+  .card-wrap{width:min(66vw,300px)}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<main class="app">
+  <header>
+    <h1>🎴 Lotería de la Fe — Modo Solo</h1>
+    <div class="controls">
+      <button id="difficulty" type="button">DIFICULTAD</button>
+      <button id="pause" type="button" class="primary">PAUSAR</button>
+      <button id="newGame" type="button">NUEVA PARTIDA</button>
+    </div>
+  </header>
+
+  <section class="status" aria-live="polite">
+    <div id="progress">0 de 54 cartas</div>
+    <div id="levelName">Modo Normal · cada 8 segundos</div>
+  </section>
+
+  <section class="game">
+    <div class="current">
+      <div class="card-wrap">
+        <img id="cardImage" src="cards/Back.png" alt="Carta oculta">
+      </div>
+      <div id="cardName" class="card-name">¡Listos para comenzar!</div>
+      <div id="callText" class="call-text">Las cartas comenzarán a cantarse automáticamente.</div>
+      <div id="nextInfo" class="next-info">Selecciona una dificultad para empezar.</div>
+    </div>
+
+    <aside class="history">
+      <h2>ÚLTIMAS CARTAS</h2>
+      <div id="historyGrid"><div class="empty">Aún no hay cartas.</div></div>
+    </aside>
+  </section>
+</main>
+
+<div id="levelOverlay" class="overlay" aria-hidden="true">
+  <div class="panel">
+    <div class="panel-top">
+      <h2>ELIGE LA DIFICULTAD</h2>
+      <button id="closeLevels" type="button" aria-label="Cerrar">×</button>
+    </div>
+    <div class="levels">
+      <button class="level" data-level="normal" type="button">
+        <img src="Selection Menu/Normal.png" alt="Modo Normal">
+        <div class="level-caption">MODO NORMAL</div>
+        <div class="level-speed">1 carta cada 8 s</div>
+      </button>
+      <button class="level" data-level="peregrino" type="button">
+        <img src="Selection Menu/Peregrino.png" alt="Peregrino">
+        <div class="level-caption">PEREGRINO</div>
+        <div class="level-speed">1 carta cada 6 s</div>
+      </button>
+      <button class="level" data-level="desierto" type="button">
+        <img src="Selection Menu/Desierto.png" alt="El Desierto">
+        <div class="level-caption">EL DESIERTO</div>
+        <div class="level-speed">1 carta cada 4.5 s</div>
+      </button>
+      <button class="level" data-level="tribulacion" type="button">
+        <img src="Selection Menu/Tribulacion.png" alt="La Tribulación">
+        <div class="level-caption">LA TRIBULACIÓN</div>
+        <div class="level-speed">1 carta cada 3 s</div>
+      </button>
+      <button class="level" data-level="apocalipsis" type="button">
+        <img src="Selection Menu/Apocalipsis.png" alt="Apocalipsis">
+        <div class="level-caption">APOCALIPSIS</div>
+        <div class="level-speed">1 carta cada 2 s</div>
+      </button>
+    </div>
+    <div class="panel-bottom">
+      <button id="start" class="primary" type="button">COMENZAR</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const deck = [
+      { nombre: "El Pastor", archivo: "El Pastor.png" },
+      { nombre: "El Maná", archivo: "El Maná.png" },
+      { nombre: "El Celular", archivo: "El Celular.png" },
+      { nombre: "El Piano", archivo: "El piano.png" },
+      { nombre: "Daniel", archivo: "Daniel.png" },
+      { nombre: "Los Cacahuates", archivo: "Los Cacahuates.png" },
+      { nombre: "La Reportera", archivo: "La Reportera.png" },
+      { nombre: "El Proyector", archivo: "El Proyector.png" },
+      { nombre: "El Pozole", archivo: "El Pozole.png" },
+      { nombre: "La Zarza", archivo: "La Zarza.png" },
+      { nombre: "El Desvelado", archivo: "El Desvelado.png" },
+      { nombre: "El Cuaderno", archivo: "El Cuaderno.png" },
+      { nombre: "La Corona", archivo: "La Corona.png" },
+      { nombre: "El Bajo", archivo: "El Bajo.png" },
+      { nombre: "El Evangelista", archivo: "El Evangelista.png" },
+      { nombre: "El Atril", archivo: "El Atril.png" },
+      { nombre: "El Aseo", archivo: "El Aseo.png" },
+      { nombre: "La Oración", archivo: "La Oración.png" },
+      { nombre: "El Redimido", archivo: "El Redimido.png" },
+      { nombre: "El Juicio", archivo: "El Juicio.png" },
+      { nombre: "El Micrófono", archivo: "El Micrófono.png" },
+      { nombre: "Génesis", archivo: "Génesis.png" },
+      { nombre: "El Abanico", archivo: "El Abanico.png" },
+      { nombre: "La Guitarra", archivo: "La Guitarra.png" },
+      { nombre: "El Mar Rojo", archivo: "El Mar Rojo.png" },
+      { nombre: "El Director", archivo: "El Director.png" },
+      { nombre: "La Botella", archivo: "La Botella.png" },
+      { nombre: "La Tumba", archivo: "La Tumba.png" },
+      { nombre: "El Himnario", archivo: "El Himnario.png" },
+      { nombre: "El Diezmo", archivo: "El Diezmo.png" },
+      { nombre: "Las Percusiones", archivo: "Las Percusiones.png" },
+      { nombre: "El Arca", archivo: "El Arca.png" },
+      { nombre: "El Niño", archivo: "El Niño.png" },
+      { nombre: "El Saxofón", archivo: "El Saxofón.png" },
+      { nombre: "El Púlpito", archivo: "El Púlpito.png" },
+      { nombre: "Salmos", archivo: "Salmos.png" },
+      { nombre: "La Silla", archivo: "La Silla.png" },
+      { nombre: "El Acordeón", archivo: "El Acordeón.png" },
+      { nombre: "La Flauta", archivo: "La Flauta.png" },
+      { nombre: "Las Tablas", archivo: "Las Tablas.png" },
+      { nombre: "El Amén", archivo: "El Amén.png" },
+      { nombre: "El Violín", archivo: "El Violín.png" },
+      { nombre: "Éxodo", archivo: "Éxodo.png" },
+      { nombre: "La Biblia", archivo: "La Biblia.png" },
+      { nombre: "El Pandero", archivo: "El Pandero.png" },
+      { nombre: "Santiago", archivo: "Santiago.png" },
+      { nombre: "El Soñador", archivo: "El Soñador.png" },
+      { nombre: "Los Pollos", archivo: "Los Pollos.png" },
+      { nombre: "Proverbios", archivo: "Proverbios.png" },
+      { nombre: "El Multimedia", archivo: "El Multimedia.png" },
+      { nombre: "Apocalipsis", archivo: "Apocalipsis.png" },
+      { nombre: "La Trompeta", archivo: "La Trompeta.png" },
+      { nombre: "El Café", archivo: "El Café.png" },
+      { nombre: "El Canto", archivo: "El Canto.png" }
+];
+
+const levels = {
+  normal:      { name:"Modo Normal", interval:8000 },
+  peregrino:   { name:"Peregrino", interval:6000 },
+  desierto:   { name:"El Desierto", interval:4500 },
+  tribulacion:{ name:"La Tribulación", interval:3000 },
+  apocalipsis:{ name:"Apocalipsis", interval:2000 }
+};
+
+let remaining = [];
+let called = [];
+let currentLevel = "normal";
+let timer = null;
+let paused = true;
+let selectedLevel = "normal";
+
+const image = document.getElementById("cardImage");
+const cardName = document.getElementById("cardName");
+const callText = document.getElementById("callText");
+const nextInfo = document.getElementById("nextInfo");
+const progress = document.getElementById("progress");
+const levelName = document.getElementById("levelName");
+const historyGrid = document.getElementById("historyGrid");
+const overlay = document.getElementById("levelOverlay");
+const pauseBtn = document.getElementById("pause");
+
+function shuffle(arr) {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function updateStatus() {
+  progress.textContent = `${called.length} de ${deck.length} cartas`;
+  const l = levels[currentLevel];
+  levelName.textContent = `${l.name} · cada ${l.interval / 1000} segundos`;
+  pauseBtn.textContent = paused ? "CONTINUAR" : "PAUSAR";
+}
+
+function renderHistory() {
+  historyGrid.innerHTML = "";
+  const recent = [...called].reverse().slice(0, 12);
+  if (!recent.length) {
+    historyGrid.innerHTML = '<div class="empty">Aún no hay cartas.</div>';
+    return;
+  }
+  recent.forEach((card, i) => {
+    const item = document.createElement("div");
+    item.className = "mini" + (i === 0 ? " current" : "");
+    const img = document.createElement("img");
+    img.src = "cards/" + card.archivo;
+    img.alt = card.nombre;
+    item.appendChild(img);
+    historyGrid.appendChild(item);
+  });
+}
+
+function stopTimer() {
+  if (timer !== null) {
+    clearInterval(timer);
+    timer = null;
+  }
+}
+
+function startTimer() {
+  stopTimer();
+  if (paused || remaining.length === 0) return;
+  timer = setInterval(callCard, levels[currentLevel].interval);
+}
+
+function callCard() {
+  if (paused || remaining.length === 0) {
+    if (remaining.length === 0) finishGame();
+    return;
+  }
+
+  const index = Math.floor(Math.random() * remaining.length);
+  const card = remaining.splice(index, 1)[0];
+  called.push(card);
+
+  image.src = "cards/" + card.archivo;
+  image.alt = card.nombre;
+  cardName.textContent = card.nombre;
+  callText.textContent = card.cantada || "¡Carta cantada!";
+  nextInfo.textContent = remaining.length
+    ? `Siguiente carta en ${levels[currentLevel].interval / 1000} segundos.`
+    : "¡Se terminaron las cartas!";
+  updateStatus();
+  renderHistory();
+
+  if (remaining.length === 0) finishGame();
+}
+
+function finishGame() {
+  stopTimer();
+  paused = true;
+  pauseBtn.textContent = "CONTINUAR";
+  nextInfo.textContent = "¡Se cantaron las 54 cartas!";
+}
+
+function newGame(autoStart = false) {
+  stopTimer();
+  remaining = shuffle(deck);
+  called = [];
+  paused = !autoStart;
+  image.src = "cards/Back.png";
+  image.alt = "Carta oculta";
+  cardName.textContent = "¡Listos para comenzar!";
+  callText.textContent = "Las cartas se llamarán automáticamente y nunca se repetirá una.";
+  nextInfo.textContent = autoStart
+    ? `Primera carta en ${levels[currentLevel].interval / 1000} segundos.`
+    : "Pulsa CONTINUAR para empezar.";
+  updateStatus();
+  renderHistory();
+  if (autoStart) startTimer();
+}
+
+function openLevels() {
+  selectedLevel = currentLevel;
+  document.querySelectorAll(".level").forEach(b => {
+    b.classList.toggle("selected", b.dataset.level === selectedLevel);
+  });
+  overlay.style.display = "flex";
+  overlay.setAttribute("aria-hidden","false");
+}
+
+function closeLevels() {
+  overlay.style.display = "none";
+  overlay.setAttribute("aria-hidden","true");
+}
+
+document.querySelectorAll(".level").forEach(btn => {
+  btn.addEventListener("click", () => {
+    selectedLevel = btn.dataset.level;
+    document.querySelectorAll(".level").forEach(b => b.classList.toggle("selected", b === btn));
+  });
+});
+
+document.getElementById("difficulty").addEventListener("click", openLevels);
+document.getElementById("closeLevels").addEventListener("click", closeLevels);
+
+document.getElementById("start").addEventListener("click", () => {
+  currentLevel = selectedLevel;
+  closeLevels();
+  newGame(true);
+});
+
+pauseBtn.addEventListener("click", () => {
+  if (remaining.length === 0) return;
+  paused = !paused;
+  updateStatus();
+  nextInfo.textContent = paused
+    ? "Juego pausado."
+    : `Siguiente carta en ${levels[currentLevel].interval / 1000} segundos.`;
+  if (paused) stopTimer();
+  else startTimer();
+});
+
+document.getElementById("newGame").addEventListener("click", () => {
+  newGame(false);
+  openLevels();
+});
+
+overlay.addEventListener("click", e => {
+  if (e.target === overlay) closeLevels();
+});
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") closeLevels();
+  if (e.key === " " && !/INPUT|TEXTAREA|SELECT|BUTTON/.test(document.activeElement.tagName)) {
+    e.preventDefault();
+    pauseBtn.click();
+  }
+});
+
+newGame(false);
+</script>
+</body>
+</html>
