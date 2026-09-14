@@ -84,7 +84,7 @@ button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
   background: rgba(255,255,255,.16);
 }
 
-/* Previously called cards: horizontal swipe/drag/scroll strip */
+/* Current card + previously called cards */
 .called-bar {
   flex: 0 0 auto;
   display: flex;
@@ -104,6 +104,75 @@ button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
   opacity: .7;
   writing-mode: vertical-rl;
   transform: rotate(180deg);
+}
+
+.current-slot {
+  flex: 0 0 auto;
+  width: clamp(62px, 7vw, 78px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 3px 3px;
+  border-radius: 9px;
+  background: rgba(72,214,107,.08);
+  border: 1px solid rgba(72,214,107,.24);
+}
+
+.current-slot-label {
+  font-size: .55rem;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: .08em;
+  color: #67e887;
+  opacity: .9;
+}
+
+.current-card {
+  position: relative;
+  width: clamp(49px, 6vw, 64px);
+  aspect-ratio: 7 / 10;
+  border-radius: 7px;
+  overflow: hidden;
+  border: 2px solid rgba(72,214,107,.95);
+  background: #111;
+  box-shadow: 0 0 0 1px rgba(72,214,107,.15), 0 4px 12px rgba(0,0,0,.3);
+}
+
+.current-card.empty {
+  display: grid;
+  place-items: center;
+  color: rgba(255,255,255,.35);
+  font-size: 1.25rem;
+  border-color: rgba(72,214,107,.3);
+  box-shadow: none;
+}
+
+.current-card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.current-number {
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  min-width: 17px;
+  padding: 2px 4px;
+  border-radius: 5px;
+  background: rgba(0,0,0,.72);
+  font-size: .58rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.history-divider {
+  flex: 0 0 1px;
+  align-self: stretch;
+  margin: 3px 2px;
+  background: rgba(255,255,255,.16);
 }
 
 .called-scroll {
@@ -128,17 +197,13 @@ button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 .called-card {
   position: relative;
   flex: 0 0 auto;
-  width: clamp(46px, 6vw, 70px);
+  width: clamp(43px, 5.3vw, 62px);
   aspect-ratio: 7 / 10;
   border-radius: 7px;
   overflow: hidden;
   border: 2px solid rgba(255,255,255,.17);
   background: #111;
   scroll-snap-align: start;
-}
-
-.called-card.latest {
-  border-color: rgba(255,255,255,.9);
 }
 
 .called-card img {
@@ -169,7 +234,6 @@ button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
   opacity: .55;
   font-size: .78rem;
 }
-
 .status {
   flex: 0 0 auto;
   display: flex;
@@ -407,6 +471,7 @@ button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
   }
 
   .called-label { display: none; }
+  .history-divider { margin-left: 1px; margin-right: 1px; }
 
   .levels {
     grid-template-columns: repeat(2, minmax(0,1fr));
@@ -423,7 +488,9 @@ button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
   .app { gap: 5px; }
 
   .called-bar { padding: 4px 6px; }
-  .called-card { width: 43px; }
+  .current-slot { width: 58px; }
+  .current-card { width: 46px; }
+  .called-card { width: 40px; }
 
   .status {
     padding: 4px 8px;
@@ -448,10 +515,20 @@ button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
     </div>
   </header>
 
-  <section class="called-bar" aria-label="Cartas previamente llamadas">
+  <section class="called-bar" aria-label="Carta actual y cartas previamente llamadas">
     <div class="called-label">CANTADAS</div>
-    <div id="calledScroll" class="called-scroll">
-      <div id="calledEmpty" class="called-empty">Todavía no se ha cantado ninguna carta.</div>
+
+    <div id="currentSlot" class="current-slot" aria-label="Carta actual">
+      <div class="current-slot-label">AHORA</div>
+      <div id="currentCard" class="current-card empty">
+        <span>—</span>
+      </div>
+    </div>
+
+    <div class="history-divider" aria-hidden="true"></div>
+
+    <div id="calledScroll" class="called-scroll" aria-label="Cartas anteriores">
+      <div id="calledEmpty" class="called-empty">Las cartas anteriores aparecerán aquí.</div>
     </div>
   </section>
 
@@ -656,7 +733,7 @@ function calculateBoardLayout() {
   const gap = Math.max(4, Math.min(10, Math.min(width, height) * 0.012));
   const padding = Math.max(2, Math.min(12, Math.min(width, height) * 0.01));
 
-  const candidates = [2, 3, 4, 5, 6];
+  const candidates = [2, 3, 4, 5, 6, 7, 8];
   let best = null;
 
   candidates.forEach(columns => {
@@ -739,19 +816,55 @@ function updateProgress() {
   progress.textContent = `${marked.size} de ${boardCards.length} marcadas`;
 }
 
-function renderCalledBar() {
-  [...calledScroll.querySelectorAll(".called-card")].forEach(el => el.remove());
+function renderCurrentCard() {
+  const currentCardEl = document.getElementById("currentCard");
+  currentCardEl.innerHTML = "";
 
   if (!called.length) {
+    currentCardEl.className = "current-card empty";
+    const empty = document.createElement("span");
+    empty.textContent = "—";
+    currentCardEl.appendChild(empty);
+    return;
+  }
+
+  const card = called[called.length - 1];
+  currentCardEl.className = "current-card";
+
+  const img = document.createElement("img");
+  img.src = "cards/" + card.archivo;
+  img.alt = card.nombre;
+
+  const number = document.createElement("span");
+  number.className = "current-number";
+  number.textContent = called.length;
+
+  currentCardEl.appendChild(img);
+  currentCardEl.appendChild(number);
+  currentCardEl.title = card.nombre;
+}
+
+function renderCalledBar() {
+  renderCurrentCard();
+
+  [...calledScroll.querySelectorAll(".called-card")].forEach(el => el.remove());
+
+  // The newest card stays in the dedicated "AHORA" slot.
+  // Everything else becomes history, newest previous card first.
+  const history = called.slice(0, -1).reverse();
+
+  if (!history.length) {
     calledEmpty.style.display = "flex";
     return;
   }
 
   calledEmpty.style.display = "none";
 
-  [...called].reverse().forEach((card, reverseIndex) => {
+  history.forEach((card, index) => {
+    const originalIndex = called.indexOf(card);
+
     const item = document.createElement("div");
-    item.className = "called-card" + (reverseIndex === 0 ? " latest" : "");
+    item.className = "called-card";
     item.title = card.nombre;
 
     const img = document.createElement("img");
@@ -760,17 +873,16 @@ function renderCalledBar() {
 
     const number = document.createElement("span");
     number.className = "called-number";
-    number.textContent = called.length - reverseIndex;
+    number.textContent = originalIndex + 1;
 
     item.appendChild(img);
     item.appendChild(number);
     calledScroll.appendChild(item);
   });
 
-  // Keep the newest card visible after every call.
+  // Keep the most recently moved card visible at the left of the history.
   calledScroll.scrollTo({ left: 0, behavior: "smooth" });
 }
-
 function stopTimer() {
   if (timer !== null) {
     clearInterval(timer);
