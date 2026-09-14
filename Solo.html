@@ -458,6 +458,15 @@ button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
   text-align: center;
 }
 
+.victory-gif {
+  display: block;
+  width: min(82vw, 520px);
+  max-height: 58vh;
+  margin: 0 auto 14px;
+  object-fit: contain;
+  border-radius: 14px;
+}
+
 .victory h2 { margin: 0 0 8px; }
 .victory p { margin: 0 0 15px; opacity: .78; }
 
@@ -506,7 +515,7 @@ button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
   #levelOverlay .levels {
     width: min(
       94vw,
-      calc((100dvh - 190px) / 2.25)
+      calc((100dvh - 225px) / 2.25)
     );
     max-width: 760px;
     grid-template-columns: repeat(2, minmax(0,1fr));
@@ -538,19 +547,26 @@ button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 
   #levelOverlay .panel-bottom {
     flex: 0 0 auto;
-    margin-top: 10px;
+    margin-top: 8px;
+    padding-bottom: max(2px, env(safe-area-inset-bottom));
+  }
+
+  #levelOverlay .panel-bottom button {
+    min-height: 42px;
+    padding: 9px 18px;
   }
 }
 
 @media (orientation: portrait) and (max-height: 700px) {
   #levelOverlay .panel {
     gap: 4px;
+    padding: 14px;
   }
 
   #levelOverlay .levels {
     width: min(
       94vw,
-      calc((100dvh - 155px) / 2.25)
+      calc((100dvh - 185px) / 2.25)
     );
     gap: 5px;
   }
@@ -567,6 +583,7 @@ button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 
   #levelOverlay .panel-bottom {
     margin-top: 5px;
+    padding-bottom: max(2px, env(safe-area-inset-bottom));
   }
 
   #levelOverlay .panel-bottom button {
@@ -690,8 +707,9 @@ button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 
 <div id="victoryOverlay" class="overlay" aria-hidden="true">
   <div class="panel victory">
+    <img id="gifVictory" class="victory-gif" src="gif/1.gif" alt="¡Lotería!">
     <h2>🎉 ¡LOTERÍA!</h2>
-    <p>Completaste tu tablero.</p>
+    <p id="victoryCountdown">Nueva partida en 7 segundos…</p>
     <button id="victoryNew" class="primary" type="button">NUEVA PARTIDA</button>
   </div>
 </div>
@@ -783,6 +801,9 @@ let selectedLevel = "normal";
 let timer = null;
 let paused = true;
 let imagesReady = false;
+let victoryTimer = null;
+let victoryCountdownTimer = null;
+let gifFiles = null;
 
 function shuffle(array) {
   const copy = [...array];
@@ -1063,15 +1084,78 @@ function closeLevels() {
   levelOverlay.setAttribute("aria-hidden", "true");
 }
 
+async function loadGifFiles() {
+  if (gifFiles) return gifFiles;
+
+  // GitHub Pages does not expose directory listings, so ask the public
+  // GitHub Contents API for the actual files inside /gif.
+  try {
+    const response = await fetch(
+      "https://api.github.com/repos/andthenbm2-max/LoteriaCNMG/contents/gif",
+      { headers: { "Accept": "application/vnd.github+json" } }
+    );
+
+    if (response.ok) {
+      const files = await response.json();
+      gifFiles = files
+        .filter(file => file.type === "file" && /\.gif$/i.test(file.name))
+        .map(file => file.download_url || ("gif/" + file.name));
+    }
+  } catch (error) {
+    gifFiles = null;
+  }
+
+  // Fallback for offline/API-limited situations.
+  if (!gifFiles || !gifFiles.length) {
+    gifFiles = ["gif/1.gif", "gif/winner.gif"];
+  }
+
+  return gifFiles;
+}
+
+async function showRandomVictoryGif() {
+  const gif = document.getElementById("gifVictory");
+  const files = await loadGifFiles();
+  const selected = files[Math.floor(Math.random() * files.length)];
+
+  // Cache-bust so the animation starts from frame 1 every time.
+  gif.src = selected + (selected.includes("?") ? "&" : "?") + "t=" + Date.now();
+}
+
 function showVictory() {
   stopTimer();
   paused = true;
   pauseBtn.textContent = "CONTINUAR";
   victoryOverlay.style.display = "flex";
   victoryOverlay.setAttribute("aria-hidden", "false");
+
+  clearTimeout(victoryTimer);
+  clearInterval(victoryCountdownTimer);
+
+  const countdown = document.getElementById("victoryCountdown");
+  let seconds = 7;
+  countdown.textContent = `Nueva partida en ${seconds} segundos…`;
+
+  showRandomVictoryGif();
+
+  victoryCountdownTimer = setInterval(() => {
+    seconds--;
+    if (seconds > 0) {
+      countdown.textContent = `Nueva partida en ${seconds} segundos…`;
+    }
+  }, 1000);
+
+  victoryTimer = setTimeout(() => {
+    clearInterval(victoryCountdownTimer);
+    closeVictory();
+    newGame();
+    startGame();
+  }, 7000);
 }
 
 function closeVictory() {
+  clearTimeout(victoryTimer);
+  clearInterval(victoryCountdownTimer);
   victoryOverlay.style.display = "none";
   victoryOverlay.setAttribute("aria-hidden", "true");
 }
