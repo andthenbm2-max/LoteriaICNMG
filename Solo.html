@@ -1107,7 +1107,7 @@ async function loadGifFiles() {
 
   // Fallback for offline/API-limited situations.
   if (!gifFiles || !gifFiles.length) {
-    gifFiles = ["gif/1.gif", "gif/winner.gif"];
+    gifFiles = ["gif/1.gif", "gif/2.gif", "gif/3.gif", "gif/4.gif", "gif/5.gif", "gif/6.gif", "gif/7.gif"];
   }
 
   return gifFiles;
@@ -1133,7 +1133,7 @@ function showVictory() {
   clearInterval(victoryCountdownTimer);
 
   const countdown = document.getElementById("victoryCountdown");
-  let seconds = 7;
+  let seconds = 10;
   countdown.textContent = `Nueva partida en ${seconds} segundos…`;
 
   showRandomVictoryGif();
