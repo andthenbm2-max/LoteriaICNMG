@@ -93,42 +93,84 @@ button:active{transform:scale(.98)}
 .victoria{display:none}.victoria-gif{display:block;width:min(100%,700px);max-height:65vh;object-fit:contain;margin:0 auto 10px;border-radius:12px}
 .victoria-icon{font-size:clamp(60px,12vw,110px);line-height:1}
 
-/* Compact difficulty selector for landscape / short screens */
-@media (orientation:landscape) and (max-height:600px){
-  .selection-overlay{padding:8px}
-  .selection-shell{width:96vw;gap:6px}
-  .selection-grid{
-    grid-template-columns:repeat(5,minmax(0,1fr));
-    gap:6px;
-  }
-  .selection-card{
-    border-radius:9px;
-    border-width:2px;
-  }
-  .selection-card.selected::after{
-    width:26px;
-    height:26px;
-    font-size:18px;
-    right:4px;
-    top:4px;
-  }
-  .selection-label{
-    font-size:14px;
-    min-height:18px;
-  }
-  .selection-confirm{
-    padding:9px 18px;
-    font-size:15px;
-  }
-  .selection-close{
-    width:34px;
-    font-size:18px;
-  }
+/* Full-screen preload */
+.preload-overlay{
+    position:fixed;
+    inset:0;
+    z-index:9999;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+        linear-gradient(rgba(0,0,0,.72),rgba(0,0,0,.82)),
+        url("Background.png") center / cover no-repeat,
+        #151515;
+    color:#fff;
+    transition:opacity .35s ease, visibility .35s ease;
+}
+.preload-overlay.hidden{
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+}
+.preload-box{
+    width:min(520px,88vw);
+    text-align:center;
+    padding:28px 24px;
+}
+.preload-cross{
+    font-size:clamp(3rem,10vw,5rem);
+    line-height:1;
+    margin-bottom:14px;
+}
+.preload-title{
+    margin:0;
+    font-size:clamp(1.5rem,5vw,2.4rem);
+    font-weight:900;
+}
+.preload-text{
+    margin:10px 0 18px;
+    font-size:clamp(.95rem,2.5vw,1.1rem);
+    opacity:.78;
+}
+.preload-track{
+    width:100%;
+    height:10px;
+    overflow:hidden;
+    border-radius:999px;
+    background:rgba(255,255,255,.18);
+}
+.preload-progress{
+    width:0%;
+    height:100%;
+    border-radius:999px;
+    background:#35cbd0;
+    transition:width .12s ease;
+}
+.preload-percent{
+    margin-top:10px;
+    font-size:.9rem;
+    font-weight:800;
+    opacity:.82;
 }
 
 </style>
 </head>
 <body>
+
+
+<div id="preloadOverlay" class="preload-overlay" aria-live="polite">
+    <div class="preload-box">
+        <div class="preload-cross">📲</div>
+        <h2 class="preload-title">Preparando Lotería de la Fe</h2>
+        <div id="preloadText" class="preload-text">Cargando cartas...</div>
+        <div class="preload-track">
+            <div id="preloadProgress" class="preload-progress"></div>
+        </div>
+        <div id="preloadPercent" class="preload-percent">0%</div>
+    </div>
+</div>
+
 <main class="app">
 <header>
   <h1>🎴 Lotería de la Fe</h1>
@@ -237,6 +279,56 @@ const mazo = [
         { nombre: "El Café", archivo: "El Café.png" },
         { nombre: "El Canto", archivo: "El Canto.png" }
 ];
+
+/* ========================================
+   PRELOAD ALL CARD ARTWORK
+   ======================================== */
+
+async function precargarCartas(mazoParaCargar) {
+    const overlay = document.getElementById("preloadOverlay");
+    const progress = document.getElementById("preloadProgress");
+    const percent = document.getElementById("preloadPercent");
+    const text = document.getElementById("preloadText");
+
+    const archivos = [...new Set(
+        mazoParaCargar.map(carta => "cards/" + carta.archivo)
+    )];
+
+    let cargadas = 0;
+
+    const cargarImagen = archivo => new Promise(resolve => {
+        const imagen = new Image();
+
+        const terminar = () => {
+            cargadas++;
+            const porcentaje = Math.round((cargadas / archivos.length) * 100);
+
+            progress.style.width = porcentaje + "%";
+            percent.textContent = porcentaje + "%";
+            text.textContent = porcentaje < 100
+                ? `Preparando cartas… ${cargadas} de ${archivos.length}`
+                : "¡Todo listo!";
+
+            resolve();
+        };
+
+        imagen.onload = terminar;
+        imagen.onerror = terminar;
+        imagen.src = archivo;
+    });
+
+    await Promise.all(archivos.map(cargarImagen));
+
+    // Give the browser one paint cycle so the completed state is visible.
+    await new Promise(resolve => requestAnimationFrame(resolve));
+
+    overlay.classList.add("hidden");
+
+    setTimeout(() => {
+        overlay.remove();
+    }, 400);
+}
+
 
 const board = document.getElementById("board");
 const contador = document.getElementById("contador");
@@ -481,9 +573,14 @@ nivelHardcoreSeleccionado = 16;
 objetivo = 16;
 modoHardcore = false;
 nombreNivel = nombresNiveles[16];
-nuevaPartida();
-// El selector es lo primero que ve el jugador.
-mostrarHardcore();
+async function iniciarPlayer() {
+  await precargarCartas(mazo);
+  nuevaPartida();
+  // El selector es lo primero que ve el jugador.
+  mostrarHardcore();
+}
+
+iniciarPlayer();
 </script>
 </body>
 </html>
