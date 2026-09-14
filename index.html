@@ -68,7 +68,76 @@
       .option { height: min(58dvh, 190px); }
       .footer { margin-top: 6px; }
     }
-  </style>
+  
+    @media (orientation: landscape) {
+      .container {
+        width: min(1180px, 96vw);
+        padding-left: max(12px, env(safe-area-inset-left));
+        padding-right: max(12px, env(safe-area-inset-right));
+      }
+
+      .options {
+        width: 100%;
+        max-width: 1120px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: clamp(10px, 1.8vw, 22px);
+      }
+
+      .option {
+        height: clamp(145px, 46dvh, 225px);
+        padding: clamp(10px, 2dvh, 20px) clamp(10px, 1.5vw, 22px);
+      }
+
+      .icon {
+        font-size: clamp(2rem, 7dvh, 3.5rem);
+        margin-bottom: clamp(5px, 1dvh, 10px);
+      }
+
+      .title {
+        font-size: clamp(1.1rem, 3.2dvh, 1.65rem);
+      }
+
+      .description {
+        font-size: clamp(.7rem, 2.1dvh, .95rem);
+      }
+
+      .footer {
+        margin-top: clamp(5px, 1.5dvh, 12px);
+      }
+    }
+
+    /* Short landscape screens, such as phones rotated sideways. */
+    @media (orientation: landscape) and (max-height: 500px) {
+      .container {
+        width: 97vw;
+        padding-top: 6px;
+        padding-bottom: 6px;
+      }
+
+      .options {
+        max-width: 1160px;
+        gap: clamp(8px, 1.5vw, 16px);
+      }
+
+      .option {
+        height: min(52dvh, 175px);
+        border-radius: 16px;
+      }
+
+      .icon {
+        font-size: clamp(1.7rem, 8dvh, 2.8rem);
+        margin-bottom: 5px;
+      }
+
+      .title {
+        font-size: clamp(1rem, 3.8dvh, 1.45rem);
+      }
+
+      .description {
+        font-size: clamp(.64rem, 2.5dvh, .82rem);
+      }
+    }
+</style>
 </head>
 <body>
   <main class="container">
