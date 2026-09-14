@@ -88,10 +88,24 @@ button:active{transform:scale(.98)}
 .selection-label{min-height:24px;color:#fff;font-weight:900;font-size:clamp(13px,1.4vw,21px);text-align:center;text-shadow:0 2px 5px #000}
 /* Landscape: all five difficulty cards fit in one row. */
 @media (orientation:landscape){
-  .selection-shell{width:min(96vw,1500px)}
+  .selection-shell{
+    width:min(96vw,1500px);
+    height:min(100dvh,700px);
+  }
+
   .selection-grid{
+    width:100%;
+    flex:0 0 auto;
     grid-template-columns:repeat(5,minmax(0,1fr));
     grid-auto-rows:auto;
+    align-items:start;
+    gap:clamp(7px,1vw,14px);
+  }
+
+  .selection-card{
+    width:100%;
+    height:auto;
+    aspect-ratio:2 / 3;
   }
 }
 
